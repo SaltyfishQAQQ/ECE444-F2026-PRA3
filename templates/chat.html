@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Flasky Chat{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Chat with the bot, {{ name }}!</h1>
+</div>
+
+<div id="chat-log" class="well" style="min-height: 200px; max-height: 400px; overflow-y: auto;"></div>
+
+<form id="chat-form" class="form-inline">
+    <input type="text" id="message" class="form-control" style="width: 60%;"
+           placeholder="Type a message, e.g. My name is Alice" autocomplete="off" required>
+    <button type="submit" class="btn btn-primary">Send</button>
+</form>
+
+<form method="post" action="{{ url_for('logout') }}" style="margin-top: 20px;">
+    <button type="submit" class="btn btn-default">Logout</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('message');
+    const log = document.getElementById('chat-log');
+
+    function addLine(who, text) {
+        const p = document.createElement('p');
+        const label = document.createElement('strong');
+        label.textContent = who + ': ';
+        p.appendChild(label);
+        p.appendChild(document.createTextNode(text));
+        log.appendChild(p);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
+        addLine('You', message);
+        input.value = '';
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            });
+            const data = await response.json();
+            addLine('Bot', data.reply);
+        } catch (err) {
+            addLine('Bot', 'Something went wrong. Please try again.');
+        }
+    });
+</script>
+{% endblock %}
